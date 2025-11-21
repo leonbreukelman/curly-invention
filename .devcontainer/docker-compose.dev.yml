@@ -11,17 +11,19 @@ services:
       - smactory-net
 
   db:
-    image: pgvector/pgvector:pg16          # ← official, current, working image (confirmed today)
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: smactory_temp_2025_change_me
       POSTGRES_DB: cognee_db
     healthcheck:
-      test: test: ["CMD-SHELL", "pg_isready -U postgres -d cognee_db && psql -U postgres -d cognee_db -c 'SELECT 1'"]
+      # Fix: Check if 'cognee_user' actually exists.
+      # This ensures the init-db.sql script has completely finished before the app starts.
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cognee_db && psql -U postgres -d cognee_db -tAc \"SELECT 1 FROM pg_roles WHERE rolname='cognee_user'\" | grep -q 1"]
       interval: 5s
       timeout: 5s
-      start_period: 80s
+      start_period: 30s
       retries: 10
     volumes:
       - postgres-data:/var/lib/postgresql/data
