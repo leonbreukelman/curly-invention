@@ -18,12 +18,15 @@ services:
       POSTGRES_PASSWORD: smactory_temp_2025_change_me
       POSTGRES_DB: cognee_db
     healthcheck:
-      # Fix: Check if 'cognee_user' actually exists.
-      # This ensures the init-db.sql script has completely finished before the app starts.
-      test: ["CMD-SHELL", "pg_isready -U postgres -d cognee_db && psql -U postgres -d cognee_db -tAc \"SELECT 1 FROM pg_roles WHERE rolname='cognee_user'\" | grep -q 1"]
+      # 1. Fix syntax (remove double 'test:')
+      # 2. Use PGPASSWORD to auth
+      # 3. Check for the specific user created by init-db.sql
+      test: 
+        - "CMD-SHELL"
+        - "PGPASSWORD=$POSTGRES_PASSWORD psql -U postgres -d cognee_db -tAc \"SELECT 1 FROM pg_roles WHERE rolname='cognee_user'\" | grep -q 1"
       interval: 5s
       timeout: 5s
-      start_period: 80s
+      start_period: 5s # Short period is fine now because the check is accurate
       retries: 10
     volumes:
       - postgres-data:/var/lib/postgresql/data
